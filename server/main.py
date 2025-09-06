@@ -1,28 +1,19 @@
+
 from fastapi import FastAPI, File, UploadFile, WebSocket, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
+import torch
+import cv2
+import os
 import numpy as np
-# ...existing code...
+from ultralytics import YOLO
+import tempfile
+import shutil
+from pathlib import Path
 
 
-# ...existing code...
 
-@app.websocket("/ws/realtime")
-async def websocket_realtime(websocket: WebSocket):
-    await websocket.accept()
-    try:
-        while True:
-            data = await websocket.receive_bytes()
-            # สมมติ client ส่งภาพมาเป็น bytes (เช่นจาก canvas หรือ video)
-            nparr = np.frombuffer(data, np.uint8)
-            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            results = model(frame)
-            if results and len(results) > 0:
-                processed_frame = results[0].plot()
-            else:
-                processed_frame = frame
-            _, buffer = cv2.imencode('.jpg', processed_frame)
-            await websocket.send_bytes(buffer.tobytes())
-    except Exception as e:
-        await websocket.close()
 from fastapi.middleware.cors import CORSMiddleware
 import torch
 import cv2
@@ -79,7 +70,26 @@ def cleanup_file(*paths: str):
         if os.path.exists(path):
             os.unlink(path)
  
+
 app = FastAPI()
+@app.websocket("/ws/realtime")
+async def websocket_realtime(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_bytes()
+            # สมมติ client ส่งภาพมาเป็น bytes (เช่นจาก canvas หรือ video)
+            nparr = np.frombuffer(data, np.uint8)
+            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            results = model(frame)
+            if results and len(results) > 0:
+                processed_frame = results[0].plot()
+            else:
+                processed_frame = frame
+            _, buffer = cv2.imencode('.jpg', processed_frame)
+            await websocket.send_bytes(buffer.tobytes())
+    except Exception as e:
+        await websocket.close()
 
 app.add_middleware(
     CORSMiddleware,
