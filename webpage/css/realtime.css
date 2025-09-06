@@ -112,6 +112,10 @@ h1 {
   color: #6b7280;
   cursor: pointer;
   transition: all 0.2s ease;
+
+  -webkit-user-select: none;
+  user-select: none;
+
   user-select: none;
 }
 .tab.red {
