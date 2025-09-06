@@ -1,4 +1,28 @@
-from fastapi import FastAPI, File, UploadFile,WebSocket,Request
+from fastapi import FastAPI, File, UploadFile, WebSocket, Request
+import numpy as np
+# ...existing code...
+
+
+# ...existing code...
+
+@app.websocket("/ws/realtime")
+async def websocket_realtime(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_bytes()
+            # สมมติ client ส่งภาพมาเป็น bytes (เช่นจาก canvas หรือ video)
+            nparr = np.frombuffer(data, np.uint8)
+            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            results = model(frame)
+            if results and len(results) > 0:
+                processed_frame = results[0].plot()
+            else:
+                processed_frame = frame
+            _, buffer = cv2.imencode('.jpg', processed_frame)
+            await websocket.send_bytes(buffer.tobytes())
+    except Exception as e:
+        await websocket.close()
 from fastapi.middleware.cors import CORSMiddleware
 import torch
 import cv2
